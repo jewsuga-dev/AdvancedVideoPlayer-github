@@ -18,7 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.advancedvideoplayer.data.TempFiles
 import com.advancedvideoplayer.ui.FileAccess
 import com.advancedvideoplayer.ui.PlayerScreen
@@ -58,6 +61,8 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) handleIntent(intent)
 
         setContent {
+            // Hide the status + navigation bars while a video is open (swipe from the edge to peek).
+            LaunchedEffect(currentUri) { updateSystemBars() }
             AdvancedVideoPlayerTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
                     PlayerScreen(
@@ -70,6 +75,22 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Bars come back after dialogs, the app switcher or the notification shade: hide them again.
+        if (hasFocus) updateSystemBars()
+    }
+
+    private fun updateSystemBars() {
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        if (currentUri != null) {
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
