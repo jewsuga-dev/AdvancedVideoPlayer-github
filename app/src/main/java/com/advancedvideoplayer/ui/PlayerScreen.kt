@@ -122,7 +122,8 @@ import kotlin.math.abs
 private val Accent = Color(0xFFFF4D6D)
 private const val LOGO_POPUP_MS = 6000L
 
-@OptIn(UnstableApi::class, ExperimentalLayoutApi::class)
+@OptIn(UnstableApi::class)
+@kotlin.OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PlayerScreen(
     videoUri: Uri?,
