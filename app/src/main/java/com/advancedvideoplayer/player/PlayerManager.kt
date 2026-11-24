@@ -1,6 +1,9 @@
 package com.advancedvideoplayer.player
 
+import android.app.UiModeManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -132,8 +135,14 @@ class PlayerManager(private val context: Context, private val config: Config = C
             .setLoadErrorHandlingPolicy(DefaultLoadErrorHandlingPolicy(3))
 
         // Hardware decoder first, software decoder as fallback; vendor extension renderers if present.
+        // On TVs the built-in DTS/Dolby decoder or HDMI passthrough is often listed as "supported"
+        // but outputs silence, stutters or fails; the FFmpeg software decoder is reliable there, so
+        // it goes FIRST (PREFER). On phones it stays the fallback after the hardware decoder (ON).
         val renderers = DefaultRenderersFactory(context)
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+            .setExtensionRendererMode(
+                if (isTelevision(context)) DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                else DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+            )
             .setEnableDecoderFallback(true)
 
         val loadControl = DefaultLoadControl.Builder()
@@ -1005,4 +1014,11 @@ class PlayerManager(private val context: Context, private val config: Config = C
         const val KEY_SELECT = "select"
         const val KEY_DTS = "dts"
     }
+}
+
+/** True on Android TV / Google TV (leanback feature or television UI mode). */
+private fun isTelevision(context: Context): Boolean {
+    if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) return true
+    val ui = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+    return ui?.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
 }
