@@ -372,31 +372,47 @@ fun PlayerScreen(
             }
         }
 
-        // Format logo popup (stream-based): top-left, same-size cells, wraps onto a second row if needed.
-        AnimatedVisibility(
-            visible = logoPopupVisible && logos.isNotEmpty() && failure == null,
-            enter = fadeIn() + slideInVertically { -it / 2 },
-            exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(top = if (isTv) 88.dp else 72.dp, start = if (isTv) 48.dp else 12.dp, end = 12.dp)
-        ) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // Top-right corner: format logo popup, with non-fatal warnings ("playing without sound",
+        // "reconnecting…") stacked underneath. While the controls are showing everything sits below
+        // the top bar; while playing (controls hidden) it moves up into the corner.
+        val showLogoPopup = logoPopupVisible && logos.isNotEmpty() && failure == null
+        val showWarnings = warnings.isNotEmpty() && failure == null
+        if (showLogoPopup || showWarnings) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(
+                        top = when {
+                            controlsVisible -> if (isTv) 88.dp else 72.dp
+                            else -> if (isTv) 24.dp else 12.dp
+                        },
+                        start = 12.dp,
+                        end = if (isTv) 48.dp else 12.dp
+                    ),
+                horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                logos.forEach { FormatBadge(it, isTv) }
-            }
-        }
-
-        // Non-fatal warnings ("playing without sound", "reconnecting…") stay visible with the controls hidden.
-        if (warnings.isNotEmpty() && failure == null) {
-            Column(
-                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, start = 12.dp, end = 12.dp).widthIn(max = 360.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                warnings.forEach { WarningChip(it) }
+                AnimatedVisibility(
+                    visible = showLogoPopup,
+                    enter = fadeIn() + slideInVertically { -it / 2 },
+                    exit = fadeOut()
+                ) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        logos.forEach { FormatBadge(it, isTv) }
+                    }
+                }
+                if (showWarnings) {
+                    Column(
+                        modifier = Modifier.widthIn(max = 360.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        warnings.forEach { WarningChip(it) }
+                    }
+                }
             }
         }
 
